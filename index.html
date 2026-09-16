@@ -280,11 +280,59 @@
   :focus-visible{ outline:2px solid var(--signal); outline-offset:2px; }
 
   @media (prefers-reduced-motion: reduce){
-    .flow-dot{ animation:none; opacity:0.7; left:50%; }
+    .flow-dot, .flow-dot-trail{ animation:none !important; opacity:0.6; left:50%; }
   }
+
+  /* ---------- AMBIENT NETWORK BACKGROUND ---------- */
+  #bg-network{
+    position:fixed; inset:0; width:100%; height:100%; z-index:0;
+    pointer-events:none;
+  }
+  #spotlight{
+    position:fixed; inset:0; z-index:1; pointer-events:none;
+    background:radial-gradient(420px circle at var(--mx,50%) var(--my,20%), rgba(255,122,69,0.06), transparent 70%);
+    transition:background .1s ease;
+  }
+  header.nav, main, footer{ position:relative; z-index:2; }
+
+  /* ---------- NAV SCROLL STATE ---------- */
+  header.nav{ transition:padding .25s ease, box-shadow .25s ease; }
+  header.nav.scrolled .nav-row{ padding:12px 32px; }
+  header.nav.scrolled{ box-shadow:0 8px 30px rgba(0,0,0,0.35); }
+
+  /* ---------- SCROLL REVEAL (pipeline motif: enters from the flow-line direction) ---------- */
+  .reveal{
+    opacity:0; transform:translateX(-18px);
+    transition:opacity .6s cubic-bezier(.2,.7,.2,1), transform .6s cubic-bezier(.2,.7,.2,1), border-color .6s ease;
+    transition-delay:var(--delay, 0s);
+  }
+  .reveal.in{ opacity:1; transform:translateX(0); }
+  .svc.reveal{ border-left:2px solid var(--line); }
+  .svc.reveal.in{ border-left:2px solid var(--signal); }
+  .why-item.reveal{ transform:translateY(14px); }
+  .why-item.reveal.in{ transform:translateY(0); }
+
+  /* ---------- COMET TRAIL ON HERO FLOW DOT ---------- */
+  .flow-dot-trail{
+    position:absolute; top:15px; width:10px; height:10px; border-radius:50%;
+    background:var(--signal); z-index:1; animation:flowX 4.5s linear infinite;
+  }
+  .flow-dot-trail.t1{ opacity:0.35; filter:blur(1px); animation-delay:-0.12s; }
+  .flow-dot-trail.t2{ opacity:0.15; filter:blur(2px); animation-delay:-0.24s; }
+
+  /* hero card subtle pointer tilt */
+  .flow-card{ transition:transform .2s ease; transform-style:preserve-3d; will-change:transform; }
+
+  /* icon svgs inherit currentColor and accent */
+  .svc-icon svg, .node-ring svg{ width:20px; height:20px; stroke:var(--signal); fill:none; stroke-width:1.6; }
+  .flow-node.active .node-ring svg{ stroke:var(--signal); }
+  .flow-node .node-ring svg{ stroke:var(--muted); }
 </style>
 </head>
 <body>
+
+<canvas id="bg-network"></canvas>
+<div id="spotlight"></div>
 
 <header class="nav">
   <div class="nav-row">
@@ -318,12 +366,14 @@
         <div class="flow-label">// lead-to-close pipeline</div>
         <div class="flow-track">
           <div class="flow-line"></div>
+          <div class="flow-dot-trail t2"></div>
+          <div class="flow-dot-trail t1"></div>
           <div class="flow-dot"></div>
-          <div class="flow-node active"><div class="node-ring">◎</div><span>New<br>Lead</span></div>
-          <div class="flow-node active"><div class="node-ring">▤</div><span>GHL<br>CRM</span></div>
-          <div class="flow-node"><div class="node-ring">⚙</div><span>Automation</span></div>
-          <div class="flow-node"><div class="node-ring">◆</div><span>AI<br>Agent</span></div>
-          <div class="flow-node"><div class="node-ring">✓</div><span>Booked<br>Call</span></div>
+          <div class="flow-node active"><div class="node-ring"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg></div><span>New<br>Lead</span></div>
+          <div class="flow-node active"><div class="node-ring"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></div><span>GHL<br>CRM</span></div>
+          <div class="flow-node"><div class="node-ring"><svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/><circle cx="12" cy="12" r="3.4"/></svg></div><span>Automation</span></div>
+          <div class="flow-node"><div class="node-ring"><svg viewBox="0 0 24 24"><path d="M12 2 3 14h6l-1 8 10-13h-6z"/></svg></div><span>AI<br>Agent</span></div>
+          <div class="flow-node"><div class="node-ring"><svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></div><span>Booked<br>Call</span></div>
         </div>
       </div>
     </div>
@@ -334,8 +384,8 @@
   <!-- ABOUT -->
   <section id="about">
     <div class="wrap about-grid">
-      <h2>About me</h2>
-      <div class="about-body">
+      <h2 class="reveal">About me</h2>
+      <div class="about-body reveal" style="--delay:.1s">
         <p>I'm a software engineer who works at the point where <strong>development, CRM systems, and automation</strong> meet. Most of my work starts with the same question a business owner asks: "why is this still manual?"</p>
         <p>I spend my time inside platforms like <strong>GoHighLevel, n8n, Make, and Zapier</strong>, building the pipelines that move a lead from first contact to booked appointment without anyone chasing it by hand. Some projects are a single CRM cleanup. Others are full systems: a website, a CRM, a set of workflows, and an AI agent, all wired together and talking to each other.</p>
         <p>I care less about which tool is trendy and more about whether the system actually holds up once real leads start flowing through it.</p>
@@ -348,14 +398,14 @@
   <!-- SERVICES -->
   <section id="services">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head reveal">
         <h2>Where I can help</h2>
         <p class="lede">Five areas, one goal: fewer manual steps between a lead and a closed deal.</p>
       </div>
 
       <div class="services-grid">
-        <div class="svc featured">
-          <div class="svc-icon">▤</div>
+        <div class="svc featured reveal">
+          <div class="svc-icon"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1"/><rect x="13" y="4" width="7" height="7" rx="1"/><rect x="4" y="13" width="7" height="7" rx="1"/><rect x="13" y="13" width="7" height="7" rx="1"/></svg></div>
           <h3>GoHighLevel CRM</h3>
           <p>Full setup and ongoing optimisation of your GHL account — the pipelines, forms, and follow-up sequences that keep leads from slipping through.</p>
           <ul>
@@ -365,8 +415,8 @@
           </ul>
         </div>
 
-        <div class="svc tall">
-          <div class="svc-icon">⚙</div>
+        <div class="svc tall reveal" style="--delay:.08s">
+          <div class="svc-icon"><svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M3 12h3M18 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/><circle cx="12" cy="12" r="3.4"/></svg></div>
           <h3>Automation</h3>
           <p>Workflows that connect the tools you already use, so information moves between them on its own.</p>
           <ul>
@@ -374,8 +424,8 @@
           </ul>
         </div>
 
-        <div class="svc wide">
-          <div class="svc-icon">◈</div>
+        <div class="svc wide reveal" style="--delay:.16s">
+          <div class="svc-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16l-6 8v6l-4 2v-8z"/></svg></div>
           <h3>Funnels &amp; Websites</h3>
           <p>Landing pages, funnels, and CRM-connected websites built to capture and route leads correctly from the first click.</p>
           <ul>
@@ -383,8 +433,8 @@
           </ul>
         </div>
 
-        <div class="svc wide">
-          <div class="svc-icon">◆</div>
+        <div class="svc wide reveal" style="--delay:.22s">
+          <div class="svc-icon"><svg viewBox="0 0 24 24"><path d="M12 2 3 14h6l-1 8 10-13h-6z"/></svg></div>
           <h3>AI Agents &amp; Automation</h3>
           <p>Chat-based agents that qualify leads, answer questions, and hand off warm prospects to your team.</p>
           <ul>
@@ -392,8 +442,8 @@
           </ul>
         </div>
 
-        <div class="svc wide">
-          <div class="svc-icon">☏</div>
+        <div class="svc wide reveal" style="--delay:.28s">
+          <div class="svc-icon"><svg viewBox="0 0 24 24"><path d="M6 10.5V8a6 6 0 0112 0v2.5M4 10.5h2v5a1 1 0 001 1h1v-6H4zm14 0h2v6h-1a1 1 0 01-1-1v-5zM9 19h6v1a1 1 0 01-1 1h-4a1 1 0 01-1-1z"/></svg></div>
           <h3>AI Voice Agents</h3>
           <p>Voice systems that answer, qualify, and book calls automatically, day or night.</p>
           <ul>
@@ -409,10 +459,10 @@
   <!-- TOOLS -->
   <section id="tools">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head reveal">
         <h2>Tools I work in</h2>
       </div>
-      <div class="tools-row">
+      <div class="tools-row reveal" style="--delay:.1s">
         <div class="tool-chip"><span class="dot2"></span>GoHighLevel</div>
         <div class="tool-chip"><span class="dot2"></span>n8n</div>
         <div class="tool-chip"><span class="dot2"></span>Make.com</div>
@@ -431,36 +481,36 @@
   <!-- EXPERTISE -->
   <section id="expertise">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head reveal">
         <h2>What I can build</h2>
         <p class="lede">A few of the systems these tools combine into.</p>
       </div>
       <div class="systems">
-        <div class="system-row">
+        <div class="system-row reveal">
           <span class="pill">Lead</span><span class="chev">›</span>
           <span class="pill">CRM</span><span class="chev">›</span>
           <span class="pill end">Automated follow-up</span>
         </div>
-        <div class="system-row">
+        <div class="system-row reveal" style="--delay:.06s">
           <span class="pill">Lead</span><span class="chev">›</span>
           <span class="pill">AI agent</span><span class="chev">›</span>
           <span class="pill">Qualification</span><span class="chev">›</span>
           <span class="pill end">Sales team</span>
         </div>
-        <div class="system-row">
+        <div class="system-row reveal" style="--delay:.12s">
           <span class="pill">Website</span><span class="chev">›</span>
           <span class="pill">Form</span><span class="chev">›</span>
           <span class="pill">GHL</span><span class="chev">›</span>
           <span class="pill">Workflow</span><span class="chev">›</span>
           <span class="pill end">Appointment</span>
         </div>
-        <div class="system-row">
+        <div class="system-row reveal" style="--delay:.18s">
           <span class="pill">AI voice agent</span><span class="chev">›</span>
           <span class="pill">Customer</span><span class="chev">›</span>
           <span class="pill">Appointment</span><span class="chev">›</span>
           <span class="pill end">CRM</span>
         </div>
-        <div class="system-row">
+        <div class="system-row reveal" style="--delay:.24s">
           <span class="pill">App A</span><span class="chev">›</span>
           <span class="pill">n8n / Make / Zapier</span><span class="chev">›</span>
           <span class="pill end">App B, C, D…</span>
@@ -474,31 +524,31 @@
   <!-- WHY -->
   <section id="why">
     <div class="wrap">
-      <div class="section-head">
+      <div class="section-head reveal">
         <h2>Why work with me</h2>
       </div>
       <div class="why-grid">
-        <div class="why-item">
+        <div class="why-item reveal">
           <h3>Business-first, not tool-first</h3>
           <p>I start with what your business needs to happen, then pick the tools that get it there — not the other way around.</p>
         </div>
-        <div class="why-item">
+        <div class="why-item reveal" style="--delay:.05s">
           <h3>CRM &amp; automation together</h3>
           <p>Your CRM and your automations are usually built by different people. I build them as one system, so they don't fight each other.</p>
         </div>
-        <div class="why-item">
+        <div class="why-item reveal" style="--delay:.1s">
           <h3>AI that's actually connected</h3>
           <p>Chat and voice agents wired directly into your CRM, not sitting off to the side generating leads no one follows up on.</p>
         </div>
-        <div class="why-item">
+        <div class="why-item reveal" style="--delay:.15s">
           <h3>Custom integrations</h3>
           <p>If two tools need to talk and there's no native integration, I build the bridge myself.</p>
         </div>
-        <div class="why-item">
+        <div class="why-item reveal" style="--delay:.2s">
           <h3>Built to scale</h3>
           <p>Workflows are structured so they still make sense once you're handling ten times the leads.</p>
         </div>
-        <div class="why-item">
+        <div class="why-item reveal" style="--delay:.25s">
           <h3>Fewer manual steps</h3>
           <p>Every system I build is measured against one thing: does it remove work, or just move it around.</p>
         </div>
@@ -587,6 +637,108 @@
       status.textContent = "Something went wrong — please email awasay1012@gmail.com directly.";
     }
   });
+
+  /* nav shrinks + gains shadow after scrolling past the hero */
+  const navEl = document.querySelector('header.nav');
+  window.addEventListener('scroll', () => {
+    navEl.classList.toggle('scrolled', window.scrollY > 40);
+  }, { passive:true });
+
+  /* scroll-reveal: elements enter along the pipeline's own left-to-right motion */
+  const revealEls = document.querySelectorAll('.reveal');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion) {
+    revealEls.forEach(el => el.classList.add('in'));
+  } else {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold:0.15, rootMargin:'0px 0px -60px 0px' });
+    revealEls.forEach(el => io.observe(el));
+  }
+
+  /* cursor spotlight, desktop only */
+  if (!reduceMotion && window.matchMedia('(pointer:fine)').matches) {
+    window.addEventListener('mousemove', (e) => {
+      document.documentElement.style.setProperty('--mx', e.clientX + 'px');
+      document.documentElement.style.setProperty('--my', e.clientY + 'px');
+    }, { passive:true });
+
+    /* subtle 3D tilt on the hero pipeline card */
+    const flowCard = document.querySelector('.flow-card');
+    if (flowCard) {
+      flowCard.addEventListener('mousemove', (e) => {
+        const r = flowCard.getBoundingClientRect();
+        const px = (e.clientX - r.left) / r.width - 0.5;
+        const py = (e.clientY - r.top) / r.height - 0.5;
+        flowCard.style.transform = `perspective(800px) rotateX(${py * -6}deg) rotateY(${px * 6}deg)`;
+      });
+      flowCard.addEventListener('mouseleave', () => {
+        flowCard.style.transform = 'perspective(800px) rotateX(0) rotateY(0)';
+      });
+    }
+  }
+
+  /* ambient network background: sparse nodes drifting and connecting, echoing the automation theme */
+  (function(){
+    const canvas = document.getElementById('bg-network');
+    const ctx = canvas.getContext('2d');
+    let w, h, points;
+
+    function sizeCanvas(){
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+    }
+
+    function makePoints(){
+      const count = Math.min(60, Math.floor((w * h) / 26000));
+      points = Array.from({ length: count }, () => ({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.25,
+        vy: (Math.random() - 0.5) * 0.25,
+      }));
+    }
+
+    sizeCanvas();
+    makePoints();
+    window.addEventListener('resize', () => { sizeCanvas(); makePoints(); });
+
+    function step(){
+      ctx.clearRect(0, 0, w, h);
+      for (const p of points) {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0 || p.x > w) p.vx *= -1;
+        if (p.y < 0 || p.y > h) p.vy *= -1;
+      }
+      for (let i = 0; i < points.length; i++) {
+        for (let j = i + 1; j < points.length; j++) {
+          const a = points[i], b = points[j];
+          const d = Math.hypot(a.x - b.x, a.y - b.y);
+          if (d < 150) {
+            ctx.strokeStyle = `rgba(41,50,97,${1 - d / 150})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.stroke();
+          }
+        }
+      }
+      for (const p of points) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 1.6, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(140,149,179,0.55)';
+        ctx.fill();
+      }
+      if (!reduceMotion) requestAnimationFrame(step);
+    }
+    step();
+  })();
 </script>
 
 </body>
